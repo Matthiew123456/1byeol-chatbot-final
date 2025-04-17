@@ -40,7 +40,9 @@ export default async function handler(req, res) {
     res.status(200).json({ response });
 
   } catch (error) {
-    console.error('❌ Erreur OpenAI :', error.response?.data || error.message || error);
-    res.status(500).json({ error: error.response?.data || error.message || 'Erreur OpenAI' });
+    console.error('❌ Erreur OpenAI :', JSON.stringify(error, null, 2)); // 🔍 log complet
+    return res.status(500).json({
+      error: error?.response?.data || error?.message || 'Erreur lors de l’appel OpenAI',
+    });
   }
 }
