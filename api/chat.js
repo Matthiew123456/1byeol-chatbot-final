@@ -1,16 +1,41 @@
+import { Configuration, OpenAIApi } from 'openai';
+
+const configuration = new Configuration({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+const openai = new OpenAIApi(configuration);
+
 export default async function handler(req, res) {
-  const apiKey = process.env.OPENAI_API_KEY;
-
-  console.log("🔍 Clé API détectée :", apiKey ? apiKey.slice(0, 10) + "..." : "❌ Aucune");
-
-  if (!apiKey) {
-    return res.status(500).json({
-      error: "❌ Clé API OpenAI manquante dans Vercel. Ajoute-la dans Environment Variables."
-    });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ message: 'Méthode non autorisée' });
   }
 
-  return res.status(200).json({
-    message: "✅ Clé API bien reçue par le backend.",
-    keyPreview: apiKey.slice(0, 10) + "..."
-  });
+  const { message } = req.body;
+
+  if (!message) {
+    return res.status(400).json({ error: 'Message manquant dans la requête.' });
+  }
+
+  try {
+    const completion = await openai.createChatCompletion({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        {
+          role: 'system',
+          content: "Tu es Léa, l'experte skincare de la marque Byeol. Tu réponds avec bienveillance et clarté aux questions sur les patchs anti-boutons, la livraison et les retours.",
+        },
+        {
+          role: 'user',
+          content: message
+        }
+      ]
+    });
+
+    const response = completion.data.choices[0].message.content;
+    res.status(200).json({ response });
+  } catch (error) {
+    console.error('❌ Erreur OpenAI :', error);
+    res.status(500).json({ error: error.message || 'Erreur OpenAI' });
+  }
 }
